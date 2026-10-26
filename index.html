@@ -417,7 +417,12 @@ body{transition:opacity .6s ease}
 .pol.dom{position:absolute;background:#f4f1e9;box-shadow:0 9px 26px rgba(0,0,0,.35)!important;z-index:2}
 .pol.dom canvas,.pol.dom i{position:absolute;display:block;pointer-events:none}
 .pol.dom canvas{left:0;top:0;width:100%;height:100%}
-.pol.dom .dv{background:#f7f6f2;opacity:0}
+.pol.dom .dv{background:#f7f6f2;opacity:1;transition:opacity 1.6s ease .35s}
+.pol.dom{transform:rotate(0deg) scale(.42);opacity:0;transition:transform .8s cubic-bezier(.2,.9,.25,1),opacity .25s ease;will-change:transform,opacity}
+.pol.dom.in{transform:rotate(2.6deg) scale(1);opacity:1;animation:polh 5.4s ease-in-out .9s infinite}
+.pol.dom.in .dv{opacity:0}
+@keyframes polh{0%,100%{translate:0 0}50%{translate:0 -5px}}
+@media (prefers-reduced-motion:reduce){.pol.dom{transition:opacity .3s}.pol.dom.in{transform:none;animation:none}}
 @media (max-width:820px){#sponsors{overflow:visible!important;padding-top:64px!important}}
 #sponsors{padding-top:clamp(48px,7vh,84px)!important;padding-bottom:clamp(48px,7vh,84px)!important}
 #sponsors h2{margin-bottom:clamp(18px,2.6vh,28px)!important}
@@ -1957,13 +1962,18 @@ body{transition:opacity .6s ease}
         const bs = R.w * .05, bb = R.w * .2, Rc = lerp(R0.w, br.width, G), Px = R.l + R.w / 2, Py = R.t + R.h / 2 - Rc * .075;
         // the photo only scales: the camera's zoom follows the frame, then lets go as the boat leaves
         U.uPR.value.set(R.l, H - R.t - R.h, R.w, R.h); U.uPF.value.set(bs, bb, -ang * Math.PI / 180, R.t + R.h < -60 ? 0 : FA); U.uPX.value.set(CL * (1 - ease(clamp01(X / .7))), DV); U.uPD.value = PD;
-        if (pol) { const s = pol.style, Wf = Math.round(Math.max(tw, R.w)), Hf = Wf * asp, bf = Wf * .2; if (pol.wf !== Wf) { pol.wf = Wf; s.width = Wf + 'px'; s.height = Hf + 'px'; polCap.style.height = bf + 'px'; polCap.style.fontSize = bf * .42 + 'px';
+        // phones: the photo sits still in the page beside the text and pops, develops and hovers in CSS, so scrolling never moves it from script
+        if (pol && pol.dom) { const s = pol.style, Wf = Math.round(tw), Hf = Wf * asp, bf = Wf * .2; U.uPF.value.w = 0;
+          if (pol.wf !== Wf) { pol.wf = Wf; s.width = Wf + 'px'; s.height = Hf + 'px'; s.left = ((br.width - Wf) / 2).toFixed(1) + 'px'; s.top = ((br.height - Hf) / 2).toFixed(1) + 'px'; polCap.style.height = bf + 'px'; polCap.style.fontSize = bf * .42 + 'px';
+            const b = Wf * .05, wr = `left:${b}px;top:${b}px;width:${Wf - 2 * b}px;height:${Hf - b - bf}px`; pol.cv.style.clipPath = `inset(${b}px ${b}px ${bf}px ${b}px)`; pol.sh.style.cssText = wr + `;box-shadow:inset 0 0 ${b * .55}px ${b * .12}px rgba(0,0,0,.3)`; pol.dv.style.cssText = wr; }
+          if (pol.ready && !pol.inn) { pol.inn = true; s.visibility = 'visible'; void pol.offsetWidth; pol.classList.add('in'); } polOn = true; }
+        else if (pol) { const s = pol.style, Wf = Math.round(Math.max(tw, R.w)), Hf = Wf * asp, bf = Wf * .2; if (pol.wf !== Wf) { pol.wf = Wf; s.width = Wf + 'px'; s.height = Hf + 'px'; polCap.style.height = bf + 'px'; polCap.style.fontSize = bf * .42 + 'px';
             if (pol.dom) { const b = Wf * .05, wr = `left:${b}px;top:${b}px;width:${Wf - 2 * b}px;height:${Hf - b - bf}px`; pol.cv.style.clipPath = `inset(${b}px ${b}px ${bf}px ${b}px)`; pol.sh.style.cssText = wr + `;box-shadow:inset 0 0 ${b * .55}px ${b * .12}px rgba(0,0,0,.3)`; pol.dv.style.cssText = wr + ';opacity:' + DV.toFixed(3); } }
           const bl = pol.dom ? br.left : 0, bt = pol.dom ? br.top : 0;
           s.visibility = pol.dom && !pol.ready ? 'hidden' : 'visible'; s.transform = `translate(${R.l + R.w / 2 - Wf / 2 - bl}px, ${R.t + R.h / 2 - Hf / 2 - bt}px) rotate(${ang}deg) scale(${(R.w / Wf).toFixed(4)})`;
           const co = (FA * (1 - PD)).toFixed(3); if (pol.co !== co) { pol.co = co; if (pol.dom) s.opacity = co; else polCap.style.opacity = co; } polOn = true;
           if (pol.ready) { U.uPF.value.w = 0; const d = DV.toFixed(3); if (pol.dvo !== d) { pol.dvo = d; pol.dv.style.opacity = d; } } }
-      } else { U.uPF.value.w = 0; R0 = null; snapDone = false; snapWait = 0; if (pol) { pol.ready = false; pol.gt = 0; } if (polOn) { pol.style.visibility = 'hidden'; polOn = false; } }
+      } else { U.uPF.value.w = 0; R0 = null; snapDone = false; snapWait = 0; if (pol) { pol.ready = false; pol.gt = 0; } if (polOn) { pol.style.visibility = 'hidden'; polOn = false; if (pol.dom) { pol.inn = false; pol.classList.remove('in'); } } }
       camera.setViewOffset(W, H, ox, oy, W, H); }
     camera.updateProjectionMatrix();
     camera.updateMatrixWorld(); placeBench(t);
