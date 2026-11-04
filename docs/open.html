@@ -77,17 +77,28 @@ function popupsAllowed() {
   return true;
 }
 const plural = n => n + (n === 1 ? ' email' : ' emails');
+// Outlook shows "Something went wrong" (BootResult: throttle) when many of its tabs start at
+// the same moment, so the tabs open a few seconds apart.
+const GAP_MS = 3000;
 function done(n) {
-  history.replaceState(null, '', location.pathname); // reloading this tab won't open them again
+  $('msg').textContent = 'Opened ' + plural(n) + ' in Outlook. Hit Send in each tab, then confirm on the outreach page. You can close this tab.';
+}
+// Opens list one tab at a time. alreadyOpened counts any opened before this call.
+function openSpaced(list, alreadyOpened) {
+  history.replaceState(null, '', location.pathname); // reloading this tab won't start over
   urls = [];
   $('setup').hidden = true;
   $('go').hidden = true;
-  $('msg').textContent = 'Opened ' + plural(n) + ' in Outlook. Hit Send in each tab, then confirm on the outreach page. You can close this tab.';
-}
-function openRest() {
-  const n = urls.length;
-  for (const u of urls) window.open(u, '_blank', 'noopener');
-  done(n);
+  const total = alreadyOpened + list.length;
+  let i = 0;
+  const step = () => {
+    window.open(list[i], '_blank', 'noopener');
+    i++;
+    if (i === list.length) { done(total); return; }
+    $('msg').textContent = 'Opened ' + (alreadyOpened + i) + ' of ' + total + '. One opens every few seconds so Outlook keeps up. Keep this tab open until it finishes.';
+    setTimeout(step, GAP_MS);
+  };
+  step();
 }
 function showSetup() {
   $('msg').textContent = plural(urls.length) + ' ready to open.';
@@ -101,8 +112,16 @@ $('go').addEventListener('click', () => {
   // The click opens the first one. A blank tab right after shows whether pop-ups are now allowed.
   window.open(urls[0], '_blank', 'noopener');
   urls = urls.slice(1);
-  if (!urls.length) { done(1); return; }
-  if (popupsAllowed()) { const n = urls.length + 1; for (const u of urls) window.open(u, '_blank', 'noopener'); done(n); return; }
+  if (!urls.length) { history.replaceState(null, '', location.pathname); $('setup').hidden = true; $('go').hidden = true; done(1); return; }
+  if (popupsAllowed()) {
+    const rest = urls;
+    $('setup').hidden = true; $('go').hidden = true;
+    $('msg').textContent = 'Opened 1 of ' + (rest.length + 1) + '. One opens every few seconds so Outlook keeps up. Keep this tab open until it finishes.';
+    history.replaceState(null, '', location.pathname);
+    urls = [];
+    setTimeout(() => openSpaced(rest, 1), GAP_MS);
+    return;
+  }
   showSetup();
   $('msg').textContent = 'Chrome opened 1 and blocked the rest. ' + plural(urls.length) + ' still to open.';
 });
@@ -118,7 +137,7 @@ $('go').addEventListener('click', () => {
     return;
   }
   if (!urls.length) { $('msg').textContent = 'Nothing to open here. Click Open all on the outreach page.'; return; }
-  if (popupsAllowed()) openRest();
+  if (popupsAllowed()) openSpaced(urls, 0);
   else showSetup();
 })();
 </script>
