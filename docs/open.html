@@ -56,7 +56,8 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   <button id="go" type="button" hidden>Open all</button>
 </main>
 <script>
-const PREFIX = 'https://outlook.office.com/mail/deeplink/compose?';
+// Work or school accounts (Georgia Tech) and personal outlook.com accounts.
+const PREFIXES = ['https://outlook.office.com/mail/deeplink/compose?', 'https://outlook.live.com/mail/0/deeplink/compose?'];
 const $ = id => document.getElementById(id);
 let urls = [];
 document.querySelectorAll('.origin').forEach(e => { e.textContent = location.origin; });
@@ -131,7 +132,7 @@ $('go').addEventListener('click', () => {
   if (!m) { $('msg').textContent = 'Nothing to open here. Click Open all on the outreach page.'; return; }
   try {
     const data = await unpack(m[1]);
-    urls = (Array.isArray(data.urls) ? data.urls : []).filter(u => typeof u === 'string' && u.startsWith(PREFIX));
+    urls = (Array.isArray(data.urls) ? data.urls : []).filter(u => typeof u === 'string' && PREFIXES.some(p => u.startsWith(p)));
   } catch (e) {
     $('msg').textContent = 'This link is damaged. Click Open all on the outreach page again.';
     return;
