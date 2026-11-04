@@ -9,7 +9,7 @@
 <style>
 /* Helper for the sponsor outreach page: claude.ai opens one tab per click, so Open all opens this
    page, and this page opens every email in its own Outlook tab. The emails travel in the part of
-   the link after #, which the browser never sends to GitHub. */
+   the link after #, which the browser never sends to the server. */
 :root {
   --bg: #f3f5f8; --surface: #ffffff; --line: #d9dfe7; --ink: #0d1b2a; --muted: #586678;
   --navy: #003057; --gold: #8c7a3f; --primary-bg: #003057; --primary-fg: #ffffff;
@@ -48,10 +48,10 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
     <p><b>Chrome blocked the tabs.</b> Chrome lets a site open only one tab per click until you allow pop-ups for it. This is a one-time setting:</p>
     <ol>
       <li>Click the <b>Pop-ups blocked</b> icon at the right end of the address bar.</li>
-      <li>Choose <b>Always allow pop-ups and redirects from https://hudsonetkin.github.io</b>, then Done.</li>
+      <li>Choose <b>Always allow pop-ups and redirects from <span class="origin">this site</span></b>, then Done.</li>
       <li>Click the button below.</li>
     </ol>
-    <p class="muted" style="margin-top:8px">No icon? Paste <code>chrome://settings/content/popups</code> into the address bar, click <b>Add</b> next to “Allowed to send pop-ups and use redirects”, enter <code>[*.]hudsonetkin.github.io</code>, then come back here.</p>
+    <p class="muted" style="margin-top:8px">No icon? Paste <code>chrome://settings/content/popups</code> into the address bar, click <b>Add</b> next to “Allowed to send pop-ups and use redirects”, enter <code>[*.]<span class="host">this site</span></code>, then come back here.</p>
   </div>
   <button id="go" type="button" hidden>Open all</button>
 </main>
@@ -59,6 +59,8 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 const PREFIX = 'https://outlook.office.com/mail/deeplink/compose?';
 const $ = id => document.getElementById(id);
 let urls = [];
+document.querySelectorAll('.origin').forEach(e => { e.textContent = location.origin; });
+document.querySelectorAll('.host').forEach(e => { e.textContent = location.hostname; });
 
 async function unpack(b64) {
   const bin = atob(b64.replace(/-/g, '+').replace(/_/g, '/'));
