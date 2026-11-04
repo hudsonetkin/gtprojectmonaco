@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<title>Open in Outlook</title>
+<style>
+/* Helper for the sponsor outreach page: claude.ai opens one tab per click, so Open all opens this
+   page, and this page opens every email in its own Outlook tab. The emails travel in the part of
+   the link after #, which the browser never sends to GitHub. */
+:root {
+  --bg: #f3f5f8; --surface: #ffffff; --line: #d9dfe7; --ink: #0d1b2a; --muted: #586678;
+  --navy: #003057; --gold: #8c7a3f; --primary-bg: #003057; --primary-fg: #ffffff;
+  --note-bg: #fbefd9;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #09111b; --surface: #0f1a28; --line: #22324a; --ink: #e4eaf2; --muted: #93a1b5;
+  --navy: #a9c4e4; --gold: #d2c189; --primary-bg: #d2c189; --primary-fg: #09111b; --note-bg: #2b2112;
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #09111b; --surface: #0f1a28; --line: #22324a; --ink: #e4eaf2; --muted: #93a1b5;
+  --navy: #a9c4e4; --gold: #d2c189; --primary-bg: #d2c189; --primary-fg: #09111b; --note-bg: #2b2112;
+  color-scheme: dark;
+}
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 620px; margin: 0 auto; padding: 40px 16px; display: flex; flex-direction: column; gap: 16px; }
+.eyebrow { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--gold); font-weight: 700; }
+h1 { margin: 0; font-size: 28px; color: var(--navy); }
+p { margin: 0; }
+.muted { color: var(--muted); font-size: 15px; }
+.box { background: var(--note-bg); border-radius: 12px; padding: 14px 16px; }
+.box ol { margin: 8px 0 0; padding-left: 22px; }
+code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 14px; user-select: all; overflow-wrap: anywhere; }
+button { font: inherit; font-weight: 600; border-radius: 9px; padding: 10px 18px; border: 1px solid var(--primary-bg); background: var(--primary-bg); color: var(--primary-fg); cursor: pointer; width: fit-content; }
+button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">Georgia Tech Project Monaco</div>
+  <h1>Open in Outlook</h1>
+  <p id="msg">Reading your emails…</p>
+  <div class="box" id="setup" hidden>
+    <p><b>Chrome blocked the tabs.</b> Chrome lets a site open only one tab per click until you allow pop-ups for it. This is a one-time setting:</p>
+    <ol>
+      <li>Click the <b>Pop-ups blocked</b> icon at the right end of the address bar.</li>
+      <li>Choose <b>Always allow pop-ups and redirects from https://hudsonetkin.github.io</b>, then Done.</li>
+      <li>Click the button below.</li>
+    </ol>
+    <p class="muted" style="margin-top:8px">No icon? Paste <code>chrome://settings/content/popups</code> into the address bar, click <b>Add</b> next to “Allowed to send pop-ups and use redirects”, enter <code>[*.]hudsonetkin.github.io</code>, then come back here.</p>
+  </div>
+  <button id="go" type="button" hidden>Open all</button>
+</main>
+<script>
+const PREFIX = 'https://outlook.office.com/mail/deeplink/compose?';
+const $ = id => document.getElementById(id);
+let urls = [];
+
+async function unpack(b64) {
+  const bin = atob(b64.replace(/-/g, '+').replace(/_/g, '/'));
+  const bytes = Uint8Array.from(bin, ch => ch.charCodeAt(0));
+  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+  return JSON.parse(await new Response(stream).text());
+}
+// A blank tab that closes straight away. Only call it when no click is in progress,
+// because a click lets Chrome open one tab whatever the setting.
+function popupsAllowed() {
+  const p = window.open('about:blank', '_blank');
+  if (!p) return false;
+  try { p.close(); } catch (e) {}
+  return true;
+}
+const plural = n => n + (n === 1 ? ' email' : ' emails');
+function done(n) {
+  history.replaceState(null, '', location.pathname); // reloading this tab won't open them again
+  urls = [];
+  $('setup').hidden = true;
+  $('go').hidden = true;
+  $('msg').textContent = 'Opened ' + plural(n) + ' in Outlook. Hit Send in each tab, then confirm on the outreach page. You can close this tab.';
+}
+function openRest() {
+  const n = urls.length;
+  for (const u of urls) window.open(u, '_blank', 'noopener');
+  done(n);
+}
+function showSetup() {
+  $('msg').textContent = plural(urls.length) + ' ready to open.';
+  $('setup').hidden = false;
+  $('go').hidden = false;
+  $('go').textContent = 'Open all ' + urls.length;
+}
+
+$('go').addEventListener('click', () => {
+  if (!urls.length) return;
+  // The click opens the first one. A blank tab right after shows whether pop-ups are now allowed.
+  window.open(urls[0], '_blank', 'noopener');
+  urls = urls.slice(1);
+  if (!urls.length) { done(1); return; }
+  if (popupsAllowed()) { const n = urls.length + 1; for (const u of urls) window.open(u, '_blank', 'noopener'); done(n); return; }
+  showSetup();
+  $('msg').textContent = 'Chrome opened 1 and blocked the rest. ' + plural(urls.length) + ' still to open.';
+});
+
+(async () => {
+  const m = location.hash.match(/^#z=([A-Za-z0-9_-]+)$/);
+  if (!m) { $('msg').textContent = 'Nothing to open here. Click Open all on the outreach page.'; return; }
+  try {
+    const data = await unpack(m[1]);
+    urls = (Array.isArray(data.urls) ? data.urls : []).filter(u => typeof u === 'string' && u.startsWith(PREFIX));
+  } catch (e) {
+    $('msg').textContent = 'This link is damaged. Click Open all on the outreach page again.';
+    return;
+  }
+  if (!urls.length) { $('msg').textContent = 'Nothing to open here. Click Open all on the outreach page.'; return; }
+  if (popupsAllowed()) openRest();
+  else showSetup();
+})();
+</script>
+</body>
+</html>
