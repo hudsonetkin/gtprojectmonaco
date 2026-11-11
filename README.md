@@ -20,12 +20,11 @@ The website for GT Project Monaco, a Georgia Tech student team building an elect
 
 ## How to keep working on it
 
-- Edit `index.html` and push to `main`. Commit messages follow a version pattern, for example `v117: add share image`. The last version is v116.
+- Edit `index.html` and push to `main`. Commit messages follow a version pattern, for example `v117: add share image`. The last version is v117.
 - Keep the established design. The rules and their reasons are in the website brief in the handoff package.
 - Open items as of the Nov 2026 handoff:
   1. Ask the major web-filter vendors (Palo Alto, Zscaler, Cisco Talos, FortiGuard, Symantec, Forcepoint, Trellix) to categorize the domain as Education. A sponsor's corporate firewall blocked it as "unknown".
   2. Add a share preview image (`og:image`).
   3. Point the Instagram and LinkedIn footer links at real accounts.
   4. Replace the "TBD" sponsor stickers with real logos as sponsors sign.
-  5. Update the Join and Sponsor email address to the new team contact.
-  6. Test on a real iPhone.
+  5. Test on a real iPhone.
